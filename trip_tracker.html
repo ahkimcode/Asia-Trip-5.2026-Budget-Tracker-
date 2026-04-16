@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trip Budget Tracker</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f5f5f2; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1a1a18; }
+.app { padding: 1rem; max-width: 540px; margin: 0 auto; }
+.page { display: none; }
+.page.active { display: block; }
+.nav { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 1rem; }
+.nav-btn { padding: 9px; border: 0.5px solid #d0d0c8; border-radius: 8px; font-size: 13px; cursor: pointer; background: transparent; color: #73726c; font-family: inherit; text-align: center; }
+.nav-btn.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+.card { background: #fff; border: 0.5px solid #e0e0d8; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+.card-title { font-size: 11px; font-weight: 500; letter-spacing: 0.07em; color: #73726c; text-transform: uppercase; margin-bottom: 1rem; }
+.arc-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 0.5rem; }
+.arc-remaining { font-size: 13px; color: #73726c; text-align: center; margin-top: 0.25rem; }
+.arc-remaining span { font-weight: 500; color: #1a1a18; }
+.progress-wrap { background: #f0f0ec; border-radius: 99px; height: 6px; margin-top: 4px; overflow: hidden; }
+.progress-bar { height: 6px; border-radius: 99px; transition: width 0.4s; }
+.cat-row { margin-bottom: 0.85rem; }
+.cat-header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+.cat-name { color: #73726c; }
+.cat-vals { font-weight: 500; color: #1a1a18; }
+.cat-vals span { font-weight: 400; color: #a0a09a; }
+.tabs2 { display: flex; gap: 4px; margin-bottom: 1rem; }
+.tab2 { flex: 1; text-align: center; padding: 8px; border: 0.5px solid #e0e0d8; border-radius: 8px; font-size: 13px; cursor: pointer; color: #73726c; background: transparent; font-family: inherit; }
+.tab2.active { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+.subview { display: none; }
+.subview.active { display: block; }
+.field-stack { display: flex; flex-direction: column; gap: 7px; margin-bottom: 8px; }
+input, select { font-size: 13px; width: 100%; padding: 9px 10px; border: 0.5px solid #d0d0c8; border-radius: 8px; background: #fff; color: #1a1a18; font-family: inherit; outline: none; }
+input:focus, select:focus { border-color: #888; }
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.btn { background: transparent; border: 0.5px solid #c0c0b8; border-radius: 8px; padding: 9px 14px; font-size: 13px; cursor: pointer; color: #1a1a18; font-family: inherit; width: 100%; }
+.btn-primary { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+.btn-green { background: #3B6D11; color: #fff; border-color: #3B6D11; }
+.food-daily { background: #f5f5f2; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; }
+.city-selector { display: flex; gap: 5px; margin-bottom: 0.75rem; }
+.city-btn { flex: 1; padding: 7px 4px; border: 0.5px solid #e0e0d8; border-radius: 8px; font-size: 12px; cursor: pointer; background: transparent; color: #73726c; font-family: inherit; text-align: center; }
+.city-btn.active { border-color: #378ADD; color: #0C447C; background: #E6F1FB; }
+.food-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.food-metric { background: #fff; border-radius: 8px; padding: 0.6rem 0.75rem; border: 0.5px solid #e0e0d8; }
+.food-metric.green-card { background: #EAF3DE; border-color: #97C459; }
+.food-metric.red-card { background: #FCEBEB; border-color: #F09595; }
+.food-metric-label { font-size: 11px; color: #73726c; margin-bottom: 2px; }
+.food-metric.green-card .food-metric-label { color: #3B6D11; }
+.food-metric.red-card .food-metric-label { color: #A32D2D; }
+.food-metric-val { font-size: 17px; font-weight: 500; }
+.green-val { color: #3B6D11; }
+.red-val { color: #A32D2D; }
+.check-cat-title { font-size: 11px; font-weight: 500; letter-spacing: 0.06em; color: #73726c; text-transform: uppercase; padding: 0.5rem 0 0.25rem; border-top: 0.5px solid #e0e0d8; margin-top: 0.5rem; }
+.check-cat-title:first-child { border-top: none; margin-top: 0; }
+.check-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 0.5px solid #e0e0d8; font-size: 13px; }
+.check-item:last-child { border-bottom: none; }
+.check-item input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #3B6D11; flex-shrink: 0; }
+.check-item label { flex: 1; cursor: pointer; color: #1a1a18; }
+.check-item.done label { text-decoration: line-through; color: #a0a09a; }
+.check-est { font-size: 12px; color: #73726c; white-space: nowrap; }
+.del-btn { background: none; border: none; color: #a0a09a; cursor: pointer; font-size: 13px; padding: 0 2px; flex-shrink: 0; }
+.del-btn:hover { color: #E24B4A; }
+.add-mustbuy { background: #f5f5f2; border-radius: 8px; padding: 0.85rem; margin-top: 0.75rem; }
+.add-mustbuy-title { font-size: 11px; color: #73726c; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.expense-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0; border-bottom: 0.5px solid #e0e0d8; font-size: 13px; }
+.expense-item:last-child { border-bottom: none; }
+.badge { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 500; margin-left: 5px; }
+.empty { color: #a0a09a; font-size: 13px; padding: 1rem 0; text-align: center; }
+.toast { background: #2C2C2A; color: #fff; font-size: 13px; padding: 8px 18px; border-radius: 99px; opacity: 0; transition: opacity 0.3s; text-align: center; margin-top: 8px; }
+.toast.show { opacity: 1; }
+.divider { height: 0.5px; background: #e0e0d8; margin: 0.75rem 0; }
+.summary-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+.summary-row span:first-child { color: #73726c; }
+.summary-row span:last-child { font-weight: 500; }
+@media (prefers-color-scheme: dark) {
+  body { background: #1a1a18; color: #f0f0ec; }
+  .card { background: #2a2a28; border-color: #3a3a38; }
+  input, select { background: #2a2a28; color: #f0f0ec; border-color: #4a4a48; }
+  .nav-btn { color: #a0a09a; border-color: #3a3a38; }
+  .nav-btn.active { background: #f0f0ec; color: #1a1a18; }
+  .tab2 { color: #a0a09a; border-color: #3a3a38; }
+  .tab2.active { background: #f0f0ec; color: #1a1a18; }
+  .btn { color: #f0f0ec; border-color: #4a4a48; }
+  .btn-primary { background: #f0f0ec; color: #1a1a18; }
+  .food-daily { background: #222220; }
+  .food-metric { background: #2a2a28; border-color: #3a3a38; }
+  .add-mustbuy { background: #222220; }
+  .progress-wrap { background: #3a3a38; }
+  .arc-remaining span { color: #f0f0ec; }
+  .cat-vals { color: #f0f0ec; }
+  .check-item label { color: #f0f0ec; }
+  .summary-row span:last-child { color: #f0f0ec; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="nav">
+  <button class="nav-btn active" onclick="showPage('tracker', this)">Tracker</button>
+  <button class="nav-btn" onclick="showPage('analysis', this)">Analysis</button>
+</div>
+
+<div class="page active" id="page-tracker">
+
+  <div class="card">
+    <div class="card-title">Total budget</div>
+    <div class="arc-wrap">
+      <canvas id="arcCanvas" width="260" height="145"></canvas>
+    </div>
+    <div class="arc-remaining" id="arcRemaining">Remaining: <span>$5,000.00</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Category budgets</div>
+    <div id="catBudgets"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Must-buys</div>
+    <div id="checklistItems"></div>
+    <div class="divider"></div>
+    <div class="summary-row"><span>Est. remaining to buy</span><span id="checklistLeft">—</span></div>
+    <div class="add-mustbuy">
+      <div class="add-mustbuy-title">Add must-buy</div>
+      <div class="field-stack">
+        <input type="text" id="mbDesc" placeholder="Item description" />
+        <div class="field-row">
+          <select id="mbCat">
+            <option value="shopping">Shopping</option>
+            <option value="health">Health & beauty</option>
+            <option value="activities">Activities</option>
+            <option value="other">Other</option>
+          </select>
+          <input type="number" id="mbEst" placeholder="Est. cost $" min="0" />
+        </div>
+        <button class="btn btn-primary" onclick="addMustBuy()">Add to list</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tabs2">
+      <button class="tab2 active" onclick="switchSub('log', this)">Log expense</button>
+      <button class="tab2" onclick="switchSub('history', this)">History</button>
+    </div>
+    <div class="subview active" id="sub-log">
+      <div class="field-stack">
+        <input type="text" id="expDesc" placeholder="Description (e.g. Ramen lunch)" />
+        <div class="field-row">
+          <select id="expCat" onchange="onCatChange()">
+            <option value="food">Food</option>
+            <option value="shopping">Shopping & souvenirs</option>
+            <option value="health">Health & beauty</option>
+            <option value="stays">Stays</option>
+            <option value="transport">Transport</option>
+            <option value="activities">Activities</option>
+            <option value="other">Other</option>
+          </select>
+          <select id="expCity">
+            <option value="tokyo">Tokyo</option>
+            <option value="hakone">Hakone</option>
+            <option value="seoul">Seoul</option>
+          </select>
+        </div>
+        <input type="number" id="expAmt" placeholder="Amount ($)" min="0" step="0.01" />
+      </div>
+      <div id="foodDailyTracker" style="display:none;">
+        <div class="food-daily">
+          <div class="card-title" style="margin-bottom:0.6rem;">Food — daily tracker</div>
+          <div class="city-selector">
+            <button class="city-btn active" id="cityTokyo" onclick="setCity('tokyo')">Tokyo $80</button>
+            <button class="city-btn" id="cityHakone" onclick="setCity('hakone')">Hakone $80</button>
+            <button class="city-btn" id="citySeoul" onclick="setCity('seoul')">Seoul $60</button>
+          </div>
+          <div class="food-metrics">
+            <div class="food-metric" id="foodTodayCard">
+              <div class="food-metric-label">Spent today</div>
+              <div class="food-metric-val" id="foodToday">$0.00</div>
+            </div>
+            <div class="food-metric" id="foodBalCard">
+              <div class="food-metric-label">Today's balance</div>
+              <div class="food-metric-val" id="foodBal">+$80.00</div>
+            </div>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:#73726c;">Food budget left: <span style="font-weight:500;color:#1a1a18;" id="foodBudgetLeft">$1,080.00</span></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addExpense()">Add expense</button>
+    </div>
+    <div class="subview" id="sub-history">
+      <div id="historyList"><div class="empty">No expenses yet</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Export to Google Sheets</div>
+    <div class="field-stack">
+      <button class="btn btn-green" onclick="copyAll()">Copy all expenses</button>
+      <button class="btn btn-green" onclick="copyFood()">Copy food log only</button>
+    </div>
+    <div style="font-size:12px;color:#73726c;margin-top:6px;line-height:1.7;">Open Google Sheets → tap cell A1 → long-press → Paste</div>
+    <div class="toast" id="toast"></div>
+  </div>
+
+</div>
+
+<div class="page" id="page-analysis">
+  <div class="card">
+    <div class="card-title">Spend by category</div>
+    <div id="catAnalysis"><div class="empty">No data yet</div></div>
+    <div style="position:relative;width:100%;height:220px;margin-top:1rem;"><canvas id="catChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Spend by city</div>
+    <div id="cityAnalysis"><div class="empty">No data yet</div></div>
+    <div style="position:relative;width:100%;height:180px;margin-top:1rem;"><canvas id="cityChart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Food — daily log</div>
+    <div id="foodDayLog"><div class="empty">No food expenses yet</div></div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const BUDGETS = { shopping:2000, food:1080, health:750, stays:571, transport:200, activities:150, other:249 };
+const DAILY = { tokyo:80, hakone:80, seoul:60 };
+const CITY_COLORS = { tokyo:'#378ADD', hakone:'#7F77DD', seoul:'#D85A30' };
+const CAT_COLORS = { shopping:'#D4537E', food:'#639922', health:'#1D9E75', stays:'#378ADD', transport:'#7F77DD', activities:'#BA7517', other:'#888780' };
+const CAT_LABELS = { shopping:'Shopping & souvenirs', food:'Food', health:'Health & beauty', stays:'Stays', transport:'Transport', activities:'Activities', other:'Other' };
+
+const DEFAULT_CHECKLIST = [
+  { id:'digi', label:'Digicam', cat:'shopping', est:500, bought:false },
+  { id:'refa', label:'ReFa', cat:'health', est:250, bought:false },
+  { id:'onitsuka', label:'Onitsuka Tigers', cat:'shopping', est:100, bought:false },
+  { id:'glasses', label:'Glasses', cat:'health', est:200, bought:false },
+  { id:'bag', label:'Bag', cat:'shopping', est:200, bought:false },
+  { id:'workout', label:'Workout clothes', cat:'shopping', est:150, bought:false },
+  { id:'goingout', label:'Going out clothes', cat:'shopping', est:200, bought:false },
+  { id:'casual', label:'Casual shirts', cat:'shopping', est:100, bought:false },
+  { id:'accessories', label:'Accessories', cat:'shopping', est:100, bought:false },
+  { id:'makeup', label:'Makeup & skincare', cat:'health', est:200, bought:false },
+];
+
+let state = {
+  expenses: [],
+  checklist: DEFAULT_CHECKLIST.map(c => ({...c})),
+  currentCity: 'tokyo',
+  catSpent: { food:0, stays:0, shopping:0, health:0, activities:0, transport:0, other:0 }
+};
+
+let catChartInst = null, cityChartInst = null;
+
+function load() {
+  try { const s = localStorage.getItem('trip_tracker_v1'); if(s) state = JSON.parse(s); } catch(e) {}
+  renderAll();
+}
+function save() { try { localStorage.setItem('trip_tracker_v1', JSON.stringify(state)); } catch(e) {} }
+
+function today() { return new Date().toISOString().slice(0,10); }
+function fmt(n) { return '$' + Math.abs(n).toFixed(2); }
+function fmtSigned(n) { return (n >= 0 ? '+' : '-') + fmt(n); }
+function totalSpent() { return Object.values(state.catSpent).reduce((s,v) => s+v, 0); }
+function totalLeft() { return Math.max(0, 5000 - totalSpent()); }
+
+function drawArc() {
+  const canvas = document.getElementById('arcCanvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+  const cx = W / 2, cy = H - 10, r = 110;
+  const spent = totalSpent();
+  const pct = Math.min(1, spent / 5000);
+  const fillEnd = Math.PI + pct * Math.PI;
+  const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const trackColor = isDark ? '#3a3a38' : '#E8E8E4';
+  const fillColor = pct > 0.85 ? '#E24B4A' : pct > 0.6 ? '#BA7517' : '#378ADD';
+  ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, 0);
+  ctx.strokeStyle = trackColor; ctx.lineWidth = 18; ctx.lineCap = 'round'; ctx.stroke();
+  if (pct > 0) {
+    ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI, fillEnd);
+    ctx.strokeStyle = fillColor; ctx.lineWidth = 18; ctx.lineCap = 'round'; ctx.stroke();
+  }
+  const textColor = isDark ? '#ffffff' : '#1a1a18';
+  const subColor = isDark ? '#a0a09a' : '#73726c';
+  ctx.fillStyle = textColor; ctx.font = '500 22px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(fmt(spent), cx, cy - 28);
+  ctx.fillStyle = subColor; ctx.font = '13px sans-serif';
+  ctx.fillText('spent of $5,000', cx, cy - 8);
+  document.getElementById('arcRemaining').innerHTML = 'Remaining: <span>' + fmt(totalLeft()) + '</span>';
+}
+
+function renderCatBudgets() {
+  const cats = Object.keys(BUDGETS).sort((a,b) => BUDGETS[b] - BUDGETS[a]);
+  document.getElementById('catBudgets').innerHTML = cats.map(cat => {
+    const budget = BUDGETS[cat];
+    const spent = state.catSpent[cat] || 0;
+    const left = Math.max(0, budget - spent);
+    const pct = Math.min(100, spent / budget * 100);
+    return `<div class="cat-row">
+      <div class="cat-header"><span class="cat-name">${CAT_LABELS[cat]}</span><span class="cat-vals">${fmt(left)} left <span>of ${fmt(budget)}</span></span></div>
+      <div class="progress-wrap"><div class="progress-bar" style="width:${pct}%;background:${CAT_COLORS[cat]};"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderChecklist() {
+  const cats = ['shopping','health','activities','other'];
+  const catNames = { shopping:'Shopping & souvenirs', health:'Health & beauty', activities:'Activities', other:'Other' };
+  let html = '';
+  cats.forEach(cat => {
+    const items = state.checklist.filter(c => c.cat === cat);
+    if (!items.length) return;
+    html += `<div class="check-cat-title">${catNames[cat]}</div>`;
+    html += items.map(c => `<div class="check-item ${c.bought ? 'done' : ''}">
+      <input type="checkbox" id="chk_${c.id}" ${c.bought ? 'checked' : ''} onchange="toggleCheck('${c.id}')" />
+      <label for="chk_${c.id}">${c.label}</label>
+      <span class="check-est">~${fmt(c.est)}</span>
+      <button class="del-btn" onclick="deleteMustBuy('${c.id}')">&#x2715;</button>
+    </div>`).join('');
+  });
+  document.getElementById('checklistItems').innerHTML = html || '<div class="empty">No must-buys yet</div>';
+  document.getElementById('checklistLeft').textContent = fmt(state.checklist.filter(c => !c.bought).reduce((s,c) => s+c.est, 0));
+}
+
+function toggleCheck(id) { const i = state.checklist.find(c => c.id===id); if(i) i.bought=!i.bought; save(); renderChecklist(); }
+function deleteMustBuy(id) { state.checklist = state.checklist.filter(c => c.id!==id); save(); renderChecklist(); }
+
+function addMustBuy() {
+  const desc = document.getElementById('mbDesc').value.trim();
+  const cat = document.getElementById('mbCat').value;
+  const est = parseFloat(document.getElementById('mbEst').value) || 0;
+  if (!desc) return;
+  state.checklist.push({ id:'mb_'+Date.now(), label:desc, cat, est, bought:false });
+  document.getElementById('mbDesc').value = '';
+  document.getElementById('mbEst').value = '';
+  save(); renderChecklist();
+}
+
+function onCatChange() {
+  const cat = document.getElementById('expCat').value;
+  document.getElementById('foodDailyTracker').style.display = cat==='food' ? 'block' : 'none';
+  if (cat==='food') renderFoodTracker();
+}
+
+function setCity(c) {
+  state.currentCity = c;
+  ['tokyo','hakone','seoul'].forEach(x => document.getElementById('city'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active', x===c));
+  document.getElementById('expCity').value = c;
+  renderFoodTracker(); save();
+}
+
+function renderFoodTracker() {
+  const c = state.currentCity, limit = DAILY[c], t = today();
+  const todayFood = state.expenses.filter(e => e.cat==='food' && e.city===c && e.date===t).reduce((s,e) => s+e.amount, 0);
+  const bal = limit - todayFood, over = bal < 0;
+  document.getElementById('foodTodayCard').className = 'food-metric' + (todayFood>0 ? (over?' red-card':' green-card') : '');
+  document.getElementById('foodBalCard').className = 'food-metric' + (todayFood>0 ? (over?' red-card':' green-card') : '');
+  document.getElementById('foodToday').innerHTML = `<span class="${over?'red-val':todayFood>0?'green-val':''}">${fmt(todayFood)}</span>`;
+  document.getElementById('foodBal').innerHTML = `<span class="${over?'red-val':'green-val'}">${fmtSigned(bal)}</span>`;
+  document.getElementById('foodBudgetLeft').textContent = fmt(Math.max(0, BUDGETS.food - (state.catSpent.food||0)));
+}
+
+function addExpense() {
+  const desc = document.getElementById('expDesc').value.trim();
+  const cat = document.getElementById('expCat').value;
+  const city = document.getElementById('expCity').value;
+  const amt = parseFloat(document.getElementById('expAmt').value);
+  if (!amt || amt<=0) return;
+  if (cat==='food') state.currentCity = city;
+  state.expenses.push({ id:Date.now(), date:today(), desc:desc||CAT_LABELS[cat], cat, city, amount:amt });
+  state.catSpent[cat] = (state.catSpent[cat]||0) + amt;
+  document.getElementById('expDesc').value = '';
+  document.getElementById('expAmt').value = '';
+  save(); renderAll();
+}
+
+function deleteExpense(id) {
+  const e = state.expenses.find(x => x.id===id);
+  if (!e) return;
+  state.expenses = state.expenses.filter(x => x.id!==id);
+  state.catSpent[e.cat] = Math.max(0, (state.catSpent[e.cat]||0) - e.amount);
+  save(); renderAll();
+}
+
+function renderHistory() {
+  const all = [...state.expenses].sort((a,b) => b.id-a.id);
+  if (!all.length) { document.getElementById('historyList').innerHTML='<div class="empty">No expenses yet</div>'; return; }
+  document.getElementById('historyList').innerHTML = all.map(e => `<div class="expense-item">
+    <div>
+      <div>${e.desc}<span class="badge" style="background:${CITY_COLORS[e.city]}22;color:${CITY_COLORS[e.city]};">${e.city}</span></div>
+      <div style="font-size:11px;color:#a0a09a;margin-top:2px;">${e.date} · ${CAT_LABELS[e.cat]}</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-weight:500;">${fmt(e.amount)}</span>
+      <button class="del-btn" onclick="deleteExpense(${e.id})">&#x2715;</button>
+    </div>
+  </div>`).join('');
+}
+
+function renderAnalysis() {
+  const cats = Object.keys(BUDGETS).sort((a,b) => BUDGETS[b]-BUDGETS[a]);
+  const cities = ['tokyo','hakone','seoul'];
+  const cityTotals = { tokyo:0, hakone:0, seoul:0 };
+  state.expenses.forEach(e => { if(cityTotals[e.city]!==undefined) cityTotals[e.city]+=e.amount; });
+  const totalSp = totalSpent();
+
+  document.getElementById('catAnalysis').innerHTML = cats.filter(c => state.catSpent[c]>0).map(c => {
+    const pct = totalSp>0 ? (state.catSpent[c]/totalSp*100).toFixed(0) : 0;
+    return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid #e0e0d8;">
+      <span style="color:#73726c;">${CAT_LABELS[c]}</span>
+      <span style="font-weight:500;">${fmt(state.catSpent[c])} <span style="font-weight:400;color:#a0a09a;">(${pct}%)</span></span>
+    </div>`;
+  }).join('') || '<div class="empty">No data yet</div>';
+
+  document.getElementById('cityAnalysis').innerHTML = cities.filter(c => cityTotals[c]>0).map(c => {
+    const pct = totalSp>0 ? (cityTotals[c]/totalSp*100).toFixed(0) : 0;
+    return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:0.5px solid #e0e0d8;">
+      <span style="color:#73726c;">${c.charAt(0).toUpperCase()+c.slice(1)}</span>
+      <span style="font-weight:500;">${fmt(cityTotals[c])} <span style="font-weight:400;color:#a0a09a;">(${pct}%)</span></span>
+    </div>`;
+  }).join('') || '<div class="empty">No data yet</div>';
+
+  const foodByDay = {};
+  state.expenses.filter(e => e.cat==='food').forEach(e => {
+    const key = e.date+'_'+e.city;
+    if (!foodByDay[key]) foodByDay[key]={ date:e.date, city:e.city, total:0 };
+    foodByDay[key].total+=e.amount;
+  });
+  const days = Object.values(foodByDay).sort((a,b) => b.date.localeCompare(a.date));
+  document.getElementById('foodDayLog').innerHTML = days.length ? days.map(d => {
+    const limit=DAILY[d.city], over=d.total>limit;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid #e0e0d8;font-size:13px;">
+      <div><span style="color:#73726c;">${d.date}</span><span class="badge" style="background:${CITY_COLORS[d.city]}22;color:${CITY_COLORS[d.city]};">${d.city}</span></div>
+      <span style="font-weight:500;color:${over?'#A32D2D':'#3B6D11'};">${fmt(d.total)} ${over?'▲':'▼'} ${fmt(limit)}</span>
+    </div>`;
+  }).join('') : '<div class="empty">No food expenses yet</div>';
+
+  if (catChartInst) { catChartInst.destroy(); catChartInst=null; }
+  if (cityChartInst) { cityChartInst.destroy(); cityChartInst=null; }
+  const activeCats = cats.filter(c => state.catSpent[c]>0);
+  if (activeCats.length) catChartInst = new Chart(document.getElementById('catChart'), { type:'doughnut', data:{ labels:activeCats.map(c=>CAT_LABELS[c]), datasets:[{ data:activeCats.map(c=>state.catSpent[c]), backgroundColor:activeCats.map(c=>CAT_COLORS[c]), borderWidth:2, borderColor:'#fff' }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } } } });
+  const activeCities = cities.filter(c => cityTotals[c]>0);
+  if (activeCities.length) cityChartInst = new Chart(document.getElementById('cityChart'), { type:'bar', data:{ labels:activeCities.map(c=>c.charAt(0).toUpperCase()+c.slice(1)), datasets:[{ data:activeCities.map(c=>cityTotals[c]), backgroundColor:activeCities.map(c=>CITY_COLORS[c]), borderRadius:6, borderWidth:0 }] }, options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true, ticks:{ callback:v=>'$'+v } }, x:{ grid:{ display:false } } } } });
+}
+
+function renderAll() { drawArc(); renderCatBudgets(); renderChecklist(); renderHistory(); renderFoodTracker(); if(document.getElementById('page-analysis').classList.contains('active')) renderAnalysis(); }
+
+function showPage(p, btn) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  btn.classList.add('active');
+  if (p==='analysis') renderAnalysis();
+}
+
+function switchSub(s, btn) {
+  document.querySelectorAll('.tab2').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.subview').forEach(v => v.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sub-'+s).classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function copyAll() {
+  if (!state.expenses.length) { showToast('No expenses yet'); return; }
+  const rows = [['Date','Description','Category','City','Amount'].join('\t'), ...state.expenses.sort((a,b)=>a.date.localeCompare(b.date)).map(e=>[e.date,e.desc,CAT_LABELS[e.cat],e.city,e.amount.toFixed(2)].join('\t'))];
+  navigator.clipboard.writeText(rows.join('\n')).then(()=>showToast('Copied! Paste into Google Sheets')).catch(()=>showToast('Copy failed'));
+}
+
+function copyFood() {
+  const food = state.expenses.filter(e=>e.cat==='food');
+  if (!food.length) { showToast('No food expenses yet'); return; }
+  const rows = [['Date','Description','City','Amount'].join('\t'), ...food.map(e=>[e.date,e.desc,e.city,e.amount.toFixed(2)].join('\t'))];
+  navigator.clipboard.writeText(rows.join('\n')).then(()=>showToast('Copied!')).catch(()=>showToast('Copy failed'));
+}
+
+load();
+</script>
+</body>
+</html>
